@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Auro's Page (WIP)</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    font-family: sans-serif;
+    overflow: hidden;
+  }
+
+  .bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .bg-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    mix-blend-mode: screen;
+    opacity: 0.5;
+    display: block;
+  }
+
+  /* --- Panel container --- */
+  .panel-container {
+    position: relative; /* for overlaying menu */
+    width: 512px;       /* match canvas size or adjust */
+    height: 800px;
+    margin: 50px auto;
+  }
+
+  #panel {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 0px;
+    z-index: 1;
+  }
+
+  /* --- Overlay content inside panel --- */
+  .panel-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    padding: 10px;
+    box-sizing: border-box;
+    color: white;
+    overflow-y: auto;
+    pointer-events: auto; /* buttons remain clickable */
+  }
+
+  /* --- FamiDash menu --- */
+  .famidash-builds h2 {
+    margin-bottom: 10px;
+  }
+
+  .famidash-builds ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .build-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 6px;
+  }
+
+  .build-info {
+    display: flex;
+    gap: 8px;
+  }
+
+  .build-number {
+    font-weight: bold;
+  }
+
+  .build-commit {
+    font-size: 0.85em;
+    opacity: 0.8;
+  }
+
+  .save-button img {
+    width: 48px;
+    height: 48px;
+    display: block;
+    transition: opacity 0.2s;
+  }
+  .save-button img:hover {
+    opacity: 0.8;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    gap: 8px;
+  }
+
+  .pagination button {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(255,255,255,0.0);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  #page-info {
+    font-size: 0.9em;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-container">
+  <img src="grid scroll.gif" alt="Background GIF">
+</div>
+
+<div class="panel-container">
+  <!-- UV-Mapped Panel -->
+  <canvas id="panel" width="256" height="400"></canvas>
+
+  <!-- Overlay content -->
+  <div class="panel-content">
+    <div class="famidash-builds">
+      <h2>Famidash Archive</h2>
+      <ul id="build-list"></ul>
+      <div class="pagination">
+        <button id="prev-page"><img src="prev.png" alt="Previous"></button>
+        <span id="page-info"></span>
+        <button id="next-page"><img src="next.png" alt="Next"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* --- UV-Mapped 9-slice Panel --- */
+const canvas = document.getElementById('panel');
+const ctx = canvas.getContext('2d');
+const img = new Image();
+img.src = 'glass.png';
+
+img.onload = () => {
+  const w = canvas.width;
+  const h = canvas.height;
+  const uv = {
+  // corners
+  tl: {u1: 0/48,  v1: 0/48,  u2: 8/48,  v2: 8/48},   // top-left
+  tr: {u1: 40/48, v1: 0/48,  u2: 48/48, v2: 8/48},   // top-right
+  bl: {u1: 0/48,  v1: 40/48, u2: 8/48,  v2: 48/48},  // bottom-left
+  br: {u1: 40/48, v1: 40/48, u2: 48/48, v2: 48/48},  // bottom-right
+
+  // edges
+  top:    {u1: 8/48,  v1: 0/48,  u2: 40/48, v2: 8/48},
+  bottom: {u1: 8/48,  v1: 40/48, u2: 40/48, v2: 48/48},
+  left:   {u1: 0/48,  v1: 8/48,  u2: 8/48,  v2: 40/48},
+  right:  {u1: 40/48, v1: 8/48,  u2: 48/48, v2: 40/48},
+
+  // center
+  center: {u1: 8/48,  v1: 8/48,  u2: 40/48, v2: 40/48}
+};
+
+
+  function drawUV(u,x,y,width,height){
+    const sx=u.u1*img.width,sy=u.v1*img.height,sWidth=(u.u2-u.u1)*img.width,sHeight=(u.v2-u.v1)*img.height;
+    ctx.drawImage(img,sx,sy,sWidth,sHeight,x,y,width,height);
+  }
+
+  const c=8; // corner size
+  drawUV(uv.tl,0,0,c,c);
+  drawUV(uv.tr,w-c,0,c,c);
+  drawUV(uv.bl,0,h-c,c,c);
+  drawUV(uv.br,w-c,h-c,c,c);
+  drawUV(uv.top,c,0,w-2*c,c);
+  drawUV(uv.bottom,c,h-c,w-2*c,c);
+  drawUV(uv.left,0,c,c,h-2*c);
+  drawUV(uv.right,w-c,c,c,h-2*c);
+  drawUV(uv.center,c,c,w-2*c,h-2*c);
+};
+
+/* --- Famidash Builds Menu + Pagination --- */
+const buildsPerPage = 10;
+let currentPage = 1;
+let allBuilds = [];
+
+async function fetchBuilds() {
+  const apiUrl = "https://api.github.com/repos/Auro-7/famidash-collection/contents";
+  try {
+    const response = await fetch(apiUrl);
+    const files = await response.json();
+    allBuilds = files.filter(f=>f.name.endsWith(".nes")).map(f=>{
+      const parts=f.name.split(".");
+      return {number:parts[0], commit:parts[2], url:f.download_url, desc:"Unknown build"};
+    }).sort((a,b)=>parseInt(a.number)-parseInt(b.number));
+  } catch(e) {
+    console.error("Failed to fetch builds, using fallback.");
+    allBuilds=[{number:"null", commit:"abc1234", url:"#", desc:"whoops"}];
+  }
+  renderPage(currentPage);
+}
+
+function renderPage(page){
+  const list=document.getElementById("build-list");
+  list.innerHTML="";
+  const start=(page-1)*buildsPerPage;
+  const end=start+buildsPerPage;
+  const pageBuilds=allBuilds.slice(start,end);
+  pageBuilds.forEach(build=>{
+    const li=document.createElement("li");
+    li.className="build-row";
+    const info=document.createElement("div");
+    info.className="build-info";
+    const num=document.createElement("span");
+    num.className="build-number"; num.textContent=build.number;
+    const commit=document.createElement("span");
+    commit.className="build-commit"; commit.textContent=build.commit;
+    info.appendChild(num); info.appendChild(commit);
+    const link=document.createElement("a");
+    link.className="save-button"; link.href=build.url;
+    const img=document.createElement("img");
+    img.src="document-save.png"; img.alt="Save"; link.appendChild(img);
+    li.appendChild(info); li.appendChild(link);
+    list.appendChild(li);
+  });
+  document.getElementById("page-info").textContent=`Page ${currentPage} of ${Math.ceil(allBuilds.length/buildsPerPage)}`;
+}
+
+document.getElementById("prev-page").addEventListener("click", ()=>{
+  if(currentPage>1){currentPage--; renderPage(currentPage);}
+});
+document.getElementById("next-page").addEventListener("click", ()=>{
+  if(currentPage<Math.ceil(allBuilds.length/buildsPerPage)){currentPage++; renderPage(currentPage);}
+});
+
+fetchBuilds();
+</script>
+
+</body>
+</html>

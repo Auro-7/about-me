@@ -139,7 +139,7 @@
 
 <div class="panel-container">
   <!-- UV-Mapped Panel -->
-  <canvas id="panel1" width="256" height="400"></canvas>
+  <canvas class="panel" width="256" height="400"></canvas>
 
   <!-- Overlay content -->
   <div class="panel-content">
@@ -156,7 +156,7 @@
 </div>
 <div class="panel-container">
   <!-- UV-Mapped Panel -->
-  <canvas id="panel2" width="256" height="400"></canvas>
+  <canvas class="panel" width="256" height="400"></canvas>
 
   <!-- Overlay content -->
   <div class="panel-content">
@@ -165,48 +165,49 @@
 </div>
 <script>
 /* --- UV-Mapped 9-slice Panel --- */
-const canvas = document.getElementById('panel');
-const ctx = canvas.getContext('2d');
-const img = new Image();
-img.src = 'glass.png';
+<script>
+/* --- UV-Mapped Glass Panels --- */
+function drawGlass(canvas) {
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.src = 'glass.png';
+  img.onload = () => {
+    const w = canvas.width;
+    const h = canvas.height;
+    const uv = {
+      tl: {u1:0/48,v1:0/48,u2:8/48,v2:8/48},
+      tr: {u1:40/48,v1:0/48,u2:48/48,v2:8/48},
+      bl: {u1:0/48,v1:40/48,u2:8/48,v2:48/48},
+      br: {u1:40/48,v1:40/48,u2:48/48,v2:48/48},
+      top: {u1:8/48,v1:0/48,u2:40/48,v2:8/48},
+      bottom: {u1:8/48,v1:40/48,u2:40/48,v2:48/48},
+      left: {u1:0/48,v1:8/48,u2:8/48,v2:40/48},
+      right: {u1:40/48,v1:8/48,u2:48/48,v2:40/48},
+      center: {u1:8/48,v1:8/48,u2:40/48,v2:40/48}
+    };
 
-img.onload = () => {
-  const w = canvas.width;
-  const h = canvas.height;
-  const uv = {
-  // corners
-  tl: {u1: 0/48,  v1: 0/48,  u2: 8/48,  v2: 8/48},   // top-left
-  tr: {u1: 40/48, v1: 0/48,  u2: 48/48, v2: 8/48},   // top-right
-  bl: {u1: 0/48,  v1: 40/48, u2: 8/48,  v2: 48/48},  // bottom-left
-  br: {u1: 40/48, v1: 40/48, u2: 48/48, v2: 48/48},  // bottom-right
+    const c = 8;
+    function drawUV(u,x,y,width,height){
+      const sx=u.u1*img.width, sy=u.v1*img.height;
+      const sWidth=(u.u2-u.u1)*img.width;
+      const sHeight=(u.v2-u.v1)*img.height;
+      ctx.drawImage(img,sx,sy,sWidth,sHeight,x,y,width,height);
+    }
 
-  // edges
-  top:    {u1: 8/48,  v1: 0/48,  u2: 40/48, v2: 8/48},
-  bottom: {u1: 8/48,  v1: 40/48, u2: 40/48, v2: 48/48},
-  left:   {u1: 0/48,  v1: 8/48,  u2: 8/48,  v2: 40/48},
-  right:  {u1: 40/48, v1: 8/48,  u2: 48/48, v2: 40/48},
+    drawUV(uv.tl,0,0,c,c);
+    drawUV(uv.tr,w-c,0,c,c);
+    drawUV(uv.bl,0,h-c,c,c);
+    drawUV(uv.br,w-c,h-c,c,c);
+    drawUV(uv.top,c,0,w-2*c,c);
+    drawUV(uv.bottom,c,h-c,w-2*c,c);
+    drawUV(uv.left,0,c,c,h-2*c);
+    drawUV(uv.right,w-c,c,c,h-2*c);
+    drawUV(uv.center,c,c,w-2*c,h-2*c);
+  };
+}
 
-  // center
-  center: {u1: 8/48,  v1: 8/48,  u2: 40/48, v2: 40/48}
-};
-
-
-  function drawUV(u,x,y,width,height){
-    const sx=u.u1*img.width,sy=u.v1*img.height,sWidth=(u.u2-u.u1)*img.width,sHeight=(u.v2-u.v1)*img.height;
-    ctx.drawImage(img,sx,sy,sWidth,sHeight,x,y,width,height);
-  }
-
-  const c=8; // corner size
-  drawUV(uv.tl,0,0,c,c);
-  drawUV(uv.tr,w-c,0,c,c);
-  drawUV(uv.bl,0,h-c,c,c);
-  drawUV(uv.br,w-c,h-c,c,c);
-  drawUV(uv.top,c,0,w-2*c,c);
-  drawUV(uv.bottom,c,h-c,w-2*c,c);
-  drawUV(uv.left,0,c,c,h-2*c);
-  drawUV(uv.right,w-c,c,c,h-2*c);
-  drawUV(uv.center,c,c,w-2*c,h-2*c);
-};
+// Draw glass on all canvases with class "panel"
+document.querySelectorAll('.panel').forEach(drawGlass);
 
 /* --- Famidash Builds Menu + Pagination --- */
 const buildsPerPage = 10;

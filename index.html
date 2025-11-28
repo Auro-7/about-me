@@ -32,20 +32,27 @@
     display: block;
   }
 
-  /* --- Panel container --- */  
-  .panel-container {
-    display: flex;
-    position: relative; /* for overlaying menu */
-    width: 512px;       /* match canvas size or adjust */
-    height: 800px;
-    margin: 50px auto;
+  /* --- Wrapper for both panels --- */
+  .panels-wrapper {
+    display: flex;           /* side by side */
+    justify-content: center; /* center horizontally */
+    gap: 20px;               /* space between panels */
+    margin-top: 50px;
   }
 
-  #panel {
+  /* --- Panel container --- */
+  .panel-container {
+    position: relative;  /* overlay content */
+    width: 256px;        /* match canvas width */
+    height: 400px;       /* match canvas height */
+  }
+
+  /* --- Canvas --- */
+  .panel {
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: 0px;
+    border-radius: 0;
     z-index: 1;
   }
 
@@ -68,13 +75,11 @@
   .famidash-builds h2 {
     margin-bottom: 10px;
   }
-
   .famidash-builds ul {
     list-style: none;
     padding: 0;
     margin: 0;
   }
-
   .build-row {
     display: flex;
     justify-content: space-between;
@@ -84,21 +89,17 @@
     background-color: rgba(255,255,255,0.1);
     border-radius: 6px;
   }
-
   .build-info {
     display: flex;
     gap: 8px;
   }
-
   .build-number {
     font-weight: bold;
   }
-
   .build-commit {
     font-size: 0.85em;
     opacity: 0.8;
   }
-
   .save-button img {
     width: 48px;
     height: 48px;
@@ -108,7 +109,6 @@
   .save-button img:hover {
     opacity: 0.8;
   }
-
   .pagination {
     display: flex;
     justify-content: center;
@@ -116,7 +116,6 @@
     margin-top: 10px;
     gap: 8px;
   }
-
   .pagination button {
     padding: 4px 10px;
     border-radius: 6px;
@@ -125,7 +124,6 @@
     color: #fff;
     cursor: pointer;
   }
-
   #page-info {
     font-size: 0.9em;
   }
@@ -137,34 +135,34 @@
   <img src="grid scroll.gif" alt="Background GIF">
 </div>
 
-<div class="panel-container">
-  <!-- UV-Mapped Panel -->
-  <canvas class="panel" width="256" height="400"></canvas>
-
-  <!-- Overlay content -->
-  <div class="panel-content">
-    <div class="famidash-builds">
-      <h2>Famidash Archive</h2>
-      <ul id="build-list"></ul>
-      <div class="pagination">
-        <button id="prev-page"><img src="prev.png" alt="Previous"></button>
-        <span id="page-info"></span>
-        <button id="next-page"><img src="next.png" alt="Next"></button>
+<div class="panels-wrapper">
+  <!-- Left panel: Famidash Archive -->
+  <div class="panel-container">
+    <canvas class="panel" width="256" height="400"></canvas>
+    <div class="panel-content">
+      <div class="famidash-builds">
+        <h2>Famidash Archive</h2>
+        <ul id="build-list"></ul>
+        <div class="pagination">
+          <button id="prev-page"><img src="prev.png" alt="Previous"></button>
+          <span id="page-info"></span>
+          <button id="next-page"><img src="next.png" alt="Next"></button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<div class="panel-container">
-  <!-- UV-Mapped Panel -->
-  <canvas class="panel" width="256" height="400"></canvas>
 
-  <!-- Overlay content -->
-  <div class="panel-content">
+  <!-- Right panel: Placeholder / Bio -->
+  <div class="panel-container">
+    <canvas class="panel" width="256" height="400"></canvas>
+    <div class="panel-content">
       <h2>PLACEHOLDER!</h2>
+    </div>
   </div>
 </div>
+
 <script>
-/* --- UV-Mapped 9-segment Glass Panels --- */
+/* --- UV-Mapped 9-slice Glass Panels --- */
 function drawGlass(canvas) {
   const ctx = canvas.getContext('2d');
   const img = new Image();
@@ -204,7 +202,7 @@ function drawGlass(canvas) {
   };
 }
 
-// Draw glass on all canvases with class "panel"
+// Draw glass on all canvases
 document.querySelectorAll('.panel').forEach(drawGlass);
 
 /* --- Famidash Builds Menu + Pagination --- */

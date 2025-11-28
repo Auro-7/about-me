@@ -34,6 +34,7 @@
 
   /* --- Panel container --- */
   .panel-container {
+    display: flex;
     position: relative; /* for overlaying menu */
     width: 512px;       /* match canvas size or adjust */
     height: 800px;
@@ -138,7 +139,7 @@
 
 <div class="panel-container">
   <!-- UV-Mapped Panel -->
-  <canvas id="panel" width="256" height="400"></canvas>
+  <canvas id="panel1" width="256" height="400"></canvas>
 
   <!-- Overlay content -->
   <div class="panel-content">
@@ -153,7 +154,15 @@
     </div>
   </div>
 </div>
+<div class="panel-container">
+  <!-- UV-Mapped Panel -->
+  <canvas id="panel2" width="256" height="400"></canvas>
 
+  <!-- Overlay content -->
+  <div class="panel-content">
+      <h2>PLACEHOLDER!</h2>
+  </div>
+</div>
 <script>
 /* --- UV-Mapped 9-slice Panel --- */
 const canvas = document.getElementById('panel');

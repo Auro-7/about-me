@@ -245,11 +245,11 @@ async function fetchBuilds() {
     const files = await response.json();
     allBuilds = files.filter(f=>f.name.endsWith(".nes")).map(f=>{
       const parts=f.name.split(".");
-      return {number:parts[0], commit:parts[2], url:f.download_url, desc:"Unknown build"};
+      return {number:parts[0], tag:parts[1], commit:parts[2], url:f.download_url, desc:"Unknown build"};
     }).sort((a,b)=>parseInt(a.number)-parseInt(b.number));
   } catch(e) {
     console.error("Failed to fetch builds, using fallback.");
-    allBuilds=[{number:"null", commit:"abc1234", url:"#", desc:"whoops"}];
+    allBuilds=[{number:"0", tag:"null", commit:"-", url:"#", desc:"?"}];
   }
   renderPage(currentPage);
 }
@@ -267,9 +267,11 @@ function renderPage(page){
     info.className="build-info";
     const num=document.createElement("span");
     num.className="build-number"; num.textContent=build.number;
+    const tag=document.createElement("span");
+    tag.className="build-tag"; tag.textContent=build.tag;
     const commit=document.createElement("span");
     commit.className="build-commit"; commit.textContent=build.commit;
-    info.appendChild(num); info.appendChild(commit);
+    info.appendChild(num); info.appendChild(tag); info.appendChild(commit);
     const link=document.createElement("a");
     link.className="save-button"; link.href=build.url;
     const img=document.createElement("img");

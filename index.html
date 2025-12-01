@@ -237,41 +237,110 @@ document.querySelectorAll('.panel').forEach(drawGlass);
 const buildsPerPage = 10;
 let currentPage = 1;
 let allBuilds = [];
+let romFiles = [];
 
+const RAW_INFO_URL = "https://raw.githubusercontent.com/Auro-7/famidash-collection/main/info.ini";
+const GITHUB_CONTENT_URL = "https://api.github.com/repos/Auro-7/famidash-collection/contents";
+
+// Extract commit/hash from the URL
+function extractCommitFromUrl(url) {
+  if (!url || url === '#') return '-';
+  const filename = url.split('/').pop();         // last part of URL
+  if (!filename.endsWith('.nes')) return '-';
+  const nameWithoutExt = filename.slice(0, -4); // remove .nes
+  const segments = nameWithoutExt.split('.');
+  return segments[segments.length - 1] || '-';   // last segment as commit/hash
+}
+
+// Fetch ROM filenames from GitHub
+async function fetchRomFiles() {
+  const res = await fetch(GITHUB_CONTENT_URL);
+  const files = await res.json();
+  romFiles = files.filter(f => f.name.endsWith('.nes')).map(f => f.name);
+}
+
+// Parse info.ini and assign ROMs
 async function fetchBuilds() {
-  const apiUrl = "https://api.github.com/repos/Auro-7/famidash-collection/contents";
-  try {
-    const response = await fetch(apiUrl);
-    const files = await response.json();
-    allBuilds = files.filter(f=>f.name.endsWith(".nes")).map(f=>{
-      const parts=f.name.split(".");
-      return {number:parts[0], tag:parts[1], commit:parts[2], url:f.download_url, desc:"Unknown build"};
-    }).sort((a,b)=>parseInt(a.number)-parseInt(b.number));
-  } catch(e) {
-    console.error("Failed to fetch builds, using fallback.");
-    allBuilds=[{number:"0", tag:"null", commit:"-", url:"#", desc:"?"}];
+  await fetchRomFiles();
+
+  const res = await fetch(RAW_INFO_URL);
+  const text = await res.text();
+
+  const lines = text.split('\n');
+  let currentEntry = null;
+  allBuilds = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const sectionMatch = line.match(/^\[(.+?)\]$/);
+    if (sectionMatch) {
+      if (currentEntry) allBuilds.push(currentEntry);
+      currentEntry = { title: sectionMatch[1] };
+      continue;
+    }
+
+    const kv = line.split('=');
+    if (kv.length === 2 && currentEntry) {
+      const key = kv[0].trim();
+      const value = kv[1].trim().replace(/^"|"$/g, '');
+      currentEntry[key] = value;
+    }
   }
+  if (currentEntry) allBuilds.push(currentEntry);
+
+  // Assign ROM to each entry
+  const assignedRoms = new Set();
+  allBuilds = allBuilds.map(entry => {
+    let matched = null;
+
+    // UV3 entries: pick first unassigned ROM
+    if (entry.uv3 === 'true') {
+      matched = romFiles.find(f => !assignedRoms.has(f));
+    } else {
+      // Regular builds: pick first unassigned ROM
+      matched = romFiles.find(f => !assignedRoms.has(f));
+    }
+
+    if (matched) assignedRoms.add(matched);
+
+    const url = matched ? `https://raw.githubusercontent.com/Auro-7/famidash-collection/main/${matched}` : '#';
+
+    return {
+      display_name: entry.display_name || entry.title,
+      date: entry.date || '-',
+      url: url,
+      commit: extractCommitFromUrl(url)
+    };
+  });
+
   renderPage(currentPage);
 }
 
-function renderPage(page){
-  const list=document.getElementById("build-list");
-  list.innerHTML="";
-  const start=(page-1)*buildsPerPage;
-  const end=start+buildsPerPage;
-  const pageBuilds=allBuilds.slice(start,end);
-  pageBuilds.forEach(build=>{
-    const li=document.createElement("li");
-    li.className="build-row";
-    const info=document.createElement("div");
-    info.className="build-info";
-    const num=document.createElement("span");
-    num.className="build-number"; num.textContent=build.number;
-    const tag=document.createElement("span");
-    tag.className="build-tag"; tag.textContent=build.tag;
-    const commit=document.createElement("span");
-    commit.className="build-commit"; commit.textContent=build.commit;
-    info.appendChild(num); info.appendChild(tag); info.appendChild(commit);
+// Render page
+function renderPage(page) {
+  const list = document.getElementById('build-list');
+  list.innerHTML = '';
+  const start = (page - 1) * buildsPerPage;
+  const end = start + buildsPerPage;
+  const pageBuilds = allBuilds.slice(start, end);
+
+  pageBuilds.forEach(build => {
+    const li = document.createElement('li');
+    li.className = 'build-row';
+
+    const info = document.createElement('div');
+    info.className = 'build-info';
+
+    const name = document.createElement('span'); name.textContent = build.display_name;
+    const date = document.createElement('span'); date.textContent = build.date;
+    const commit = document.createElement('span'); commit.textContent = build.commit;
+
+    info.appendChild(name);
+    info.appendChild(date);
+    info.appendChild(commit);
+
     const link=document.createElement("a");
     link.className="save-button"; link.href=build.url;
     const img=document.createElement("img");
@@ -279,6 +348,7 @@ function renderPage(page){
     li.appendChild(info); li.appendChild(link);
     list.appendChild(li);
   });
+
   document.getElementById("page-info").textContent=`Page ${currentPage} of ${Math.ceil(allBuilds.length/buildsPerPage)}`;
 }
 
